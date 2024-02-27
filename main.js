@@ -9,7 +9,6 @@ async function dataFetch(){
         const response = await fetch(URL)
         const data = await response.json()
         scatterPlot(data)
-        console.log(data)
     }catch(e){
         console.error(e)
     }
@@ -17,12 +16,14 @@ async function dataFetch(){
 
 dataFetch()
 
-function scatterPlot(data){
+function checkAlleged(doping){
+    return doping.includes("Alleged") 
+}
 
+function scatterPlot(data){
     const width = 800
     const height = 500
     const margin = {top: 40, bottom: 40, left: 80, right: 20}
-    console.log(d3.min(data, d => d["Time"]))
 
     const parseTime = d3.timeParse("%M:%S");
     data.forEach(d => {
@@ -64,8 +65,8 @@ function scatterPlot(data){
         .attr("cy", d => y(d.Time))
         .attr("r", 5)
         .attr("data-xvalue", d => d.Year)
-        .attr("data-yvalue", d => d.Time)
-
+        .attr("data-yvalue", d => d.Time.toUTCString())
+        .attr("fill", d => checkAlleged( d.Doping) ? "orange": "blue")
 
     
     svg.selectAll(".dot")
@@ -75,7 +76,7 @@ function scatterPlot(data){
             .html(`${d.Doping} <br> ${d.Year} ${formatTime(d.Time)} <br> ${d.Name} ${d.Nationality}`)
             .style("left", (e.pageX + 20) + "px")
             .style("top", (e.pageY + 20) + "px")
-            .attr("data-year", d["Year"])
+            .attr("data-year", d.Year)
         })
         .on("mouseleave", () => {
             tooltip.style("opacity", 0)
@@ -93,6 +94,42 @@ function scatterPlot(data){
 
     svg.append("g")
         .attr("id", "legend")
+    
+    svg.select("#legend")
+        .append("g")
+        .attr("class", "alleged")
+        .attr("transform", `translate(${width - margin.right * 2}, ${height - margin.bottom * 2 - 10})`)
 
+    svg.select(".alleged")
+        .append("rect")
+        .style("fill", "blue")
+        .attr("width", 20)
+        .attr("height", 20)
+
+    svg.select(".alleged")
+        .append("text")
+        .text("No doping allegations")
+        .attr("x", -width / 5)
+        .attr("y", 15)
+        
+    svg.select("#legend")
+        .append("g")
+        .attr("class", "not-alleged")
+        .attr("transform", `translate(${width - margin.right * 2}, ${height - margin.bottom * 2 + 10 })`)
+  
+    svg.select(".not-alleged")
+        .append("text")
+        .text("Riders with doping allegations")
+        .attr("x", -width / 4)
+        .attr("y", 10)
+    
+     svg.select(".not-alleged")
+        .append("rect")
+        .style("fill", "orange")
+        .attr("width", 20)
+        .attr("height", 20)
+
+    
+        
     container.appendChild(svg.node())
 }
